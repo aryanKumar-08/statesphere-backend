@@ -132,16 +132,40 @@ export const profilePosts = async (req, res) => {
 
 
 
+// export const getNotificationNumber = async (req, res) => {
+//   const tokenUserId = req.userId;
+//   try {
+//     const number = await Chat.countDocuments({
+//       userIDs: { $in: [tokenUserId] },
+//       seenBy: { $nin: [tokenUserId] },
+//     });
+//     res.status(200).json(number);
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ message: "Failed to get notification count!" });
+//   }
+// };
+
+
+
+import Chat from "../models/chat.model.js";
+
 export const getNotificationNumber = async (req, res) => {
-  const tokenUserId = req.userId;
   try {
-    const number = await Chat.countDocuments({
-      userIDs: { $in: [tokenUserId] },
-      seenBy: { $nin: [tokenUserId] },
+    // Get all chats involving the current user
+    const chats = await Chat.find({
+      members: { $in: [req.userId] },
     });
-    res.status(200).json(number);
+
+    // Count how many of those chats are not seen by the user
+    const unseenChats = chats.filter(
+      (chat) => !chat.seenBy.includes(req.userId)
+    );
+
+    res.status(200).json(unseenChats.length);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Failed to get notification count!" });
+    console.error("Notification error:", err.message);
+    res.status(500).json("Failed to fetch notification count");
   }
 };
+
